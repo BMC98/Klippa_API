@@ -2,6 +2,8 @@ import sys
 import requests
 import json
 import argparse
+import base64
+import os
 from argparse import ArgumentParser, Action as ParseAction
 
 """
@@ -30,7 +32,11 @@ parser.add_argument('-p', '--printInFile', type = bool, default = False,
 					help = "Choose whether to print the result in a json file (True) or on the terminal (False). False by default ")
 args = parser.parse_args()
 
-x = requests.post("https://custom-ocr.klippa.com/api/v1/parseDocument", headers = args.key, data = vars(args))
+if args.document == None:
+	x = requests.post("https://custom-ocr.klippa.com/api/v1/parseDocument", headers = args.key, data = vars(args))
+else:
+	files = {'document' : open(args.document,'rb')}
+	x = requests.post("https://custom-ocr.klippa.com/api/v1/parseDocument", headers = args.key, data = vars(args), files = files)
 
 """
 Depending on the value of the printInFile parameter, the code below
@@ -38,9 +44,9 @@ will either print the output to a json file as it is, or format it
 for better reading and print it to the terminal
 """
 if args.printInFile == True:
-	f = open("output.json","w+")
+	filename = input("What would you like the file to be named? ")
+	f = open(filename + ".json","w+")
 	f.write(x.text)
 else:
-	y = json.loads(x.text)
-	for pair in y.items():
-		print(pair)
+	print(json.dumps(x.json(), indent = 4))
+	
