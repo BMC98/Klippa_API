@@ -32,21 +32,38 @@ parser.add_argument('-p', '--printInFile', type = bool, default = False,
 					help = "Choose whether to print the result in a json file (True) or on the terminal (False). False by default ")
 args = parser.parse_args()
 
+"""
+If no document is provided, that means there is a url (since they are mutually
+exclusive but one of them is required by the argument parser), so the request
+will be sent with the url. If there is a document provided, the program
+first checks whether it is a single document or a directory. If it is a single
+document, it sends one request, otherwise it will send multiple requests for
+each file in the directory.
+"""
+
 if args.document == None:
 	x = requests.post("https://custom-ocr.klippa.com/api/v1/parseDocument", headers = args.key, data = vars(args))
-else:
+elif os.path.isfile(args.document):
 	files = {'document' : open(args.document,'rb')}
 	x = requests.post("https://custom-ocr.klippa.com/api/v1/parseDocument", headers = args.key, data = vars(args), files = files)
-
-"""
-Depending on the value of the printInFile parameter, the code below
-will either print the output to a json file as it is, or format it 
-for better reading and print it to the terminal
-"""
-if args.printInFile == True:
-	filename = input("What would you like the file to be named? ")
-	f = open(filename + ".json","w+")
-	f.write(x.text)
-else:
-	print(json.dumps(x.json(), indent = 4))
+	if args.printInFile == True:
+		filename = input("What would you like the file to be named? ")
+		f = open(filename + ".json","w+")
+		f.write(x.text)
+	else:
+		print(json.dumps(x.json(), indent = 4))
+elif os.path.isdir(args.document):
+	folder_name = args.document
+	for item in os.listdir(args.document):
+		args.document = os.getcwd() + '/' + folder_name + '/' + item		
+		files = {'document' : open(args.document,'rb')}
+		x = requests.post("https://custom-ocr.klippa.com/api/v1/parseDocument", headers = args.key, data = vars(args), files = files)
+		if args.printInFile == True:
+			filename = input("What would you like the file to be named? ")
+			f = open(filename + ".json","w+")
+			f.write(x.text)
+		else:
+			print(json.dumps(x.json(), indent = 4))
+			print('\n' * 2)
+			
 	
